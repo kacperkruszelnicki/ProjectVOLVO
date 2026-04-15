@@ -2,6 +2,7 @@ import requests
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from docx import Document
+from pypdf import PdfReader
 import json
 from flask_cors import CORS
 from flask import Flask, request, jsonify
@@ -23,7 +24,20 @@ def load_docx(path):
         print(f"Loading error {path}: {e}")
         return ""
 
-# List of documents in local directory (optional)
+def load_pdf(path):
+    try:
+        reader = PdfReader(path)
+        text = ""
+        for page in reader.pages:
+            content = page.extract_text()
+            if content:
+                text += content + "\n"
+        return text
+    except Exception as e:
+        print(f"Loading error {path}: {e}")
+        return ""
+
+# List of docx documents in local directory (optional)
 docx_files = [
     "dokument1.docx",
     "dokument2.docx",
@@ -32,6 +46,11 @@ docx_files = [
     "dokument5.docx",
     "dokument6.docx"
 ]
+# List of pdf documents in local directory (optional)
+pdf_files = [
+    "dokument1.pdf",
+    "dokument2.pdf"
+    ]
 
 # DOCUMENTS
 documents = [
@@ -84,8 +103,17 @@ for i, file in enumerate(docx_files):
             "source": f"{file}_chunk{j}"
         })
 
+for file in pdf_files:
+    content = load_pdf(file)
+    chunks = chunk_text(content)
+    for j, chunk in enumerate(chunks):
+        documents.append({
+            "content": chunk,
+            "source": f"{file}_chunk{j}"
+        })
+
 # Finds top-k relevant documents based on cosine similarity.
-def search(query, k=3, threshold=0.15):
+def search(query, k=4, threshold=0.15):
     query_vec = vectorizer.transform([query])
     similarities = cosine_similarity(query_vec, doc_vectors)[0]
 
