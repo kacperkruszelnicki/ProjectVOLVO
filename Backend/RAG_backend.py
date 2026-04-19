@@ -6,6 +6,7 @@ from pypdf import PdfReader
 import json
 from flask_cors import CORS
 from flask import Flask, request, jsonify
+import datetime
 
 app = Flask(__name__)
 CORS(app)
@@ -14,6 +15,17 @@ CORS(app)
 API_KEY = "hf_..."
 API_URL = "https://router.huggingface.co/v1/chat/completions"
 MODEL_ID = "meta-llama/Llama-3.1-8B-Instruct"
+
+def log_error(question, reason, sources=None):
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    # Formatowanie listy źródeł, jeśli istnieją
+    src_text = f" | SOURCES: {', '.join(sources)}" if sources else " | SOURCES: None"
+    
+    log_entry = f"[{timestamp}] QUESTION: {question} | REASON: {reason}{src_text}\n"
+    
+    with open("rag_errors.txt", "a", encoding="utf-8") as f:
+        f.write(log_entry)
 
 def load_docx(path):
     try:
@@ -317,6 +329,8 @@ def ask(question, profile="business"):
     docs = search(question)
 
     if not docs:
+        # Logging the lack of matching documents
+        log_error(question, "No matching documents found")
         return {
             "answer": "I do not know based on provided context.",
             "sources": []
@@ -327,6 +341,9 @@ def ask(question, profile="business"):
     #conflict_result = detect_conflicts_with_llm(context)
     conflict_result = detect_conflict_structured(docs)
     if conflict_result != "NO_CONFLICT" and conflict_result != "NOT_SURE":
+        # Logging conflicting information
+        source_names = [d["source"] for d in docs]
+        log_error(question, f"Conflict: {conflict_result}", sources=source_names)
         return {
             "answer": f"Detected conflicting information in the documents:\n\n{conflict_result}",
             "sources": [d["source"] for d in docs]
