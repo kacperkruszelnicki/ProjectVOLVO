@@ -4,16 +4,31 @@ import datetime
 from docx import Document
 from pypdf import PdfReader
 from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
 import faiss
 import numpy as np
+import re
 
 # CONFIG
 DOCX_FILES = ["dokument1.docx", "dokument2.docx", "dokument3.docx", "dokument4.docx", "dokument5.docx", "dokument6.docx"]
 PDF_FILES = ["dokument1.pdf", "dokument2.pdf"]
+DOCUMENT_STATUS = {
+    "dokument1.docx": "effective",
+    "dokument2.docx": "reviewing",
+    "dokument3.docx": "draft",
+    "dokument4.docx": "obsolete",
+    "dokument5.docx": "draft",
+    "dokument6.docx": "effective",
+
+    "dokument1.pdf": "effective",
+    "dokument2.pdf": "draft"
+}
 OUTPUT_FILE = "prepared_data_faiss.pkl"
 # Model for creating embeddings
-MODEL_NAME = 'all-MiniLM-L6-v2'
-LOCAL_MODEL_PATH = "models/all-MiniLM-L6-v2"
+#MODEL_NAME = 'all-MiniLM-L6-v2'
+MODEL_NAME = "paraphrase-multilingual-MiniLM-L12-v2"
+#LOCAL_MODEL_PATH = "models/all-MiniLM-L6-v2"
+LOCAL_MODEL_PATH = "models/paraphrase-multilingual-MiniLM-L12-v2"
 
 def load_or_download_model():
     if os.path.exists(LOCAL_MODEL_PATH):
@@ -39,7 +54,8 @@ documents = [
         do docelowego systemu, np. hurtowni danych lub data lake.""",
         "source": "doc1",
         "last_modified": "2023-01-01 10:00:00",
-        "tags": ["architecture", "data-engineering", "pipeline"]
+        "tags": ["architecture", "data-engineering", "pipeline"],
+        "status": "effective"
     },
     {
         "content": """Architektura medallion jest podejściem do organizacji danych w warstwach.
@@ -48,7 +64,8 @@ documents = [
         Podejście to pozwala na lepszą kontrolę jakości danych oraz ich transformacji.""",
         "source": "doc2",
         "last_modified": "2023-05-15 12:00:00",
-        "tags": ["medallion", "lakehouse", "organization"]
+        "tags": ["medallion", "lakehouse", "organization"],
+        "status": "effective"
     },
     {
         "content": """Data lake to centralne repozytorium danych, które przechowuje dane w ich
@@ -58,7 +75,8 @@ documents = [
         nie wymaga wcześniejszego schematu danych.""",
         "source": "doc3",
         "last_modified": "2023-08-20 09:30:00",
-        "tags": ["data-lake", "storage", "big-data"]
+        "tags": ["data-lake", "storage", "big-data"],
+        "status": "effective"
     }
 ]
 
@@ -99,6 +117,64 @@ def chunk_text(text, size=500, overlap=100):
         start += step
     return chunks
 
+def split_sentences(text):
+    sentences = re.split(r'(?<=[.!?])\s+', text)
+    return [s.strip() for s in sentences if s.strip()]
+
+def semantic_chunk_text(
+    text,
+    semantic_model,
+    similarity_threshold=0.40,
+    max_chunk_sentences=8,
+    min_chunk_sentences=3
+):
+
+    sentences = split_sentences(text)
+
+    if len(sentences) <= 1:
+        return [text]
+
+    sentence_embeddings = semantic_model.encode(sentences)
+
+    chunks = []
+    current_chunk = [sentences[0]]
+    current_embeddings = [sentence_embeddings[0]]
+
+    for i in range(1, len(sentences)):
+
+        # embedding of new sentence
+        new_embedding = sentence_embeddings[i]
+
+        # mean embedding of current chunk
+        chunk_embedding = np.mean(current_embeddings, axis=0)
+
+        # similarity chunk vs new sentence
+        sim = cosine_similarity(
+            [chunk_embedding],
+            [new_embedding]
+        )[0][0]
+
+        # decision
+        if (
+            sim >= similarity_threshold
+            or len(current_chunk) < min_chunk_sentences
+        ) and len(current_chunk) < max_chunk_sentences:
+
+            current_chunk.append(sentences[i])
+            current_embeddings.append(new_embedding)
+
+        else:
+            chunks.append(" ".join(current_chunk))
+
+            current_chunk = [sentences[i]]
+            current_embeddings = [new_embedding]
+
+    # last chunk
+    if current_chunk:
+        chunks.append(" ".join(current_chunk))
+
+    return chunks
+
 def run_preparation():
     print(f"Loading embedding model: {MODEL_NAME}...")
     model = load_or_download_model()
@@ -113,13 +189,15 @@ def run_preparation():
             content = loader(file)
             last_mod = get_file_metadata(file)
             if content:
-                chunks = chunk_text(content)
+                #chunks = chunk_text(content)
+                chunks = semantic_chunk_text(content, model)
                 for j, chunk in enumerate(chunks):
                     all_docs.append({
                         "content": chunk,
                         "source": file,
                         "last_modified": last_mod,
-                        "tags": ["file_import", file.split('.')[-1]]
+                        "tags": ["file_import", file.split('.')[-1]],
+                        "status": DOCUMENT_STATUS.get(file, "draft")
                     })
 
     print(f"Generating embeddings for {len(all_docs)} chunks...")
