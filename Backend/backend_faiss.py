@@ -29,6 +29,14 @@ try:
 except Exception as e:
     print(f"CANNOT LOAD DB: {e}")
 
+STATUS_WEIGHTS = {
+    "effective": 1.0,
+    "reviewing": 0.8,
+    "draft": 0.5,
+    "archived": 0.2,
+    "obsolete": 0.0
+}
+
 def log_event(question, reason, sources=None):
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
@@ -45,7 +53,7 @@ def log_event(question, reason, sources=None):
     except Exception as e:
         print("Logging error:", e)
 
-def search_faiss(query, k=4, threshold=1.0):
+def search_faiss(query, k=8, threshold=30.0):
     query_vector = model.encode([query]).astype('float32')
     distances, indices = index.search(query_vector, k)
     
@@ -144,17 +152,31 @@ def detect_and_resolve_conflicts_smart(docs):
     def compute_score(doc):
         # freshness (timestamp)
         try:
-            date_score = datetime.datetime.strptime(
+            timestamp = datetime.datetime.strptime(
                 doc.get("last_modified", "1970-01-01 00:00:00"),
                 "%Y-%m-%d %H:%M:%S"
             ).timestamp()
         except:
-            date_score = 0
-
-        # FAISS score
+            timestamp = 0
+        
+        freshness_score = timestamp / 2000000000
+        
+        # semantic similarity
         faiss_score = 1 / (1 + doc.get("score", 1.0))
-
-        return date_score * 0.7 + faiss_score * 0.3
+        
+        # status
+        status_score = STATUS_WEIGHTS.get(
+            doc.get("status", "draft"),
+            0.5
+        )
+        
+        final_score = (
+            freshness_score * 0.4 +
+            faiss_score * 0.4 +
+            status_score * 0.2
+        )
+        
+        return final_score
 
     group_scores = {}
 
@@ -185,6 +207,8 @@ def detect_and_resolve_conflicts_smart(docs):
 
 def ask(question, profile="business"):
     initial_docs = search_faiss(question)
+    # removing obsolete documents
+    initial_docs = [d for d in initial_docs if d.get("status") != "obsolete"]
     if not initial_docs:
         log_event(question, "No matching documents found")
         return {"answer": "No appropriate data found.", "sources": []}
@@ -224,7 +248,7 @@ def ask(question, profile="business"):
         answer = r.json()["choices"][0]["message"]["content"]
         return {
             "answer": answer,
-            "sources": [f"{d['source']} ({d['last_modified']})" for d in final_docs],
+            "sources": [f"{d['source']} | {d['status']} | ({d['last_modified']})" for d in final_docs],
             "status": status,
             "rejected": rejected
         }
