@@ -9,21 +9,23 @@ import faiss
 import numpy as np
 import re
 
-# CONFIG
-DOCX_FILES = ["dokument1.docx", "dokument2.docx", "dokument3.docx", "dokument4.docx", "dokument5.docx", "dokument6.docx"]
-PDF_FILES = ["dokument1.pdf", "dokument2.pdf"]
-DOCUMENT_STATUS = {
-    "dokument1.docx": "effective",
-    "dokument2.docx": "reviewing",
-    "dokument3.docx": "draft",
-    "dokument4.docx": "obsolete",
-    "dokument5.docx": "draft",
-    "dokument6.docx": "effective",
+from image_extract import extract_and_describe_images
 
-    "dokument1.pdf": "effective",
-    "dokument2.pdf": "draft"
+# CONFIG
+DOCX_FILES = ["data/raw/dokument1.docx", "data/raw/dokument2.docx", "data/raw/dokument3.docx", "data/raw/dokument4.docx", "data/raw/dokument5.docx", "data/raw/dokument6.docx"]
+PDF_FILES = ["data/raw/dokument1.pdf", "data/raw/dokument2.pdf"]
+DOCUMENT_STATUS = {
+    "data/raw/dokument1.docx": "effective",
+    "data/raw/dokument2.docx": "reviewing",
+    "data/raw/dokument3.docx": "draft",
+    "data/raw/dokument4.docx": "obsolete",
+    "data/raw/dokument5.docx": "draft",
+    "data/raw/dokument6.docx": "effective",
+
+    "data/raw/dokument1.pdf": "effective",
+    "data/raw/dokument2.pdf": "draft"
 }
-OUTPUT_FILE = "prepared_data_faiss.pkl"
+OUTPUT_FILE = "data/processed/prepared_data_faiss.pkl"
 # Model for creating embeddings
 #MODEL_NAME = 'all-MiniLM-L6-v2'
 MODEL_NAME = "paraphrase-multilingual-MiniLM-L12-v2"
@@ -126,7 +128,8 @@ def semantic_chunk_text(
     semantic_model,
     similarity_threshold=0.40,
     max_chunk_sentences=8,
-    min_chunk_sentences=3
+    min_chunk_sentences=3,
+    min_chunk_chars = 80
 ):
 
     sentences = split_sentences(text)
@@ -173,6 +176,7 @@ def semantic_chunk_text(
     if current_chunk:
         chunks.append(" ".join(current_chunk))
 
+    chunks = [c for c in chunks if len(c) >= min_chunk_chars]
     return chunks
 
 def run_preparation():
@@ -186,8 +190,9 @@ def run_preparation():
         for file in file_list:
             if not os.path.exists(file):
                 continue
-            content = loader(file)
             last_mod = get_file_metadata(file)
+            status = DOCUMENT_STATUS.get(file, "draft")
+            content = loader(file)
             if content:
                 #chunks = chunk_text(content)
                 chunks = semantic_chunk_text(content, model)
@@ -197,8 +202,13 @@ def run_preparation():
                         "source": file,
                         "last_modified": last_mod,
                         "tags": ["file_import", file.split('.')[-1]],
-                        "status": DOCUMENT_STATUS.get(file, "draft")
+                        "status": status,
+                        "type": "text"
                     })
+
+            image_chunks = extract_and_describe_images(file, last_mod, status)
+            if image_chunks:
+                all_docs.extend(image_chunks)
 
     print(f"Generating embeddings for {len(all_docs)} chunks...")
     texts = [d["content"] for d in all_docs]
@@ -210,6 +220,7 @@ def run_preparation():
     index.add(np.array(embeddings).astype('float32'))
 
     # Writing DB
+    os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
     data_to_save = {
         "documents": all_docs,
         "faiss_index": faiss.serialize_index(index),

@@ -1,3 +1,5 @@
+import os
+from dotenv import load_dotenv
 import requests
 import json
 import pickle
@@ -10,7 +12,8 @@ app = Flask(__name__)
 CORS(app)
 
 # CONFIG
-API_KEY = "hf_..."
+load_dotenv() 
+API_KEY = os.getenv("HF_API_KEY")
 API_URL = "https://router.huggingface.co/v1/chat/completions"
 MODEL_ID = "meta-llama/Llama-3.1-8B-Instruct"
 INPUT_FILE = "prepared_data.pkl"

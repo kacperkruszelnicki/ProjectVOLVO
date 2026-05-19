@@ -1,3 +1,5 @@
+import os
+from dotenv import load_dotenv
 import requests
 import json
 import pickle
@@ -12,11 +14,12 @@ app = Flask(__name__)
 CORS(app)
 
 # CONFIG
-API_KEY = "hf_..."
+load_dotenv()
+API_KEY = os.getenv("HF_API_KEY")
 API_URL = "https://router.huggingface.co/v1/chat/completions"
 MODEL_ID = "meta-llama/Llama-3.1-8B-Instruct"
 
-INPUT_FILE = "prepared_data_faiss.pkl"
+INPUT_FILE = "data/processed/prepared_data_faiss.pkl"
 
 # Loading data and model
 try:
@@ -48,7 +51,7 @@ def log_event(question, reason, sources=None):
     log_entry = f"[{timestamp}] QUESTION: {question} | REASON: {reason}{src_text}\n"
     
     try:
-        with open("rag_logs.txt", "a", encoding="utf-8") as f:
+        with open("logs/rag_logs.txt", "a", encoding="utf-8") as f:
             f.write(log_entry)
     except Exception as e:
         print("Logging error:", e)
