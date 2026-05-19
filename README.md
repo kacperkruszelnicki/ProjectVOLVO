@@ -25,3 +25,11 @@ Chatbot does not detect profiles and does not adjust the level of complexity of 
 
 * No access to production Confluence pages for students.
 * Available technologies are related to the Open AI and Copilot.
+
+---
+
+## Getting started
+
+* Install uv
+* After insstalling process, in the project folder enter the command - uv sync
+* Create file .env and enter own access token from Hugging face
