@@ -40,6 +40,14 @@ STATUS_WEIGHTS = {
     "obsolete": 0.0
 }
 
+IMPLEMENTATION_WEIGHTS = {
+    "completed": 1.0,
+    "on_going": 0.8,
+    "poc": 0.6,
+    "plan": 0.4,
+    "n/a": 0.5
+}
+
 def log_event(question, reason, sources=None):
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
@@ -172,12 +180,24 @@ def detect_and_resolve_conflicts_smart(docs):
             doc.get("status", "draft"),
             0.5
         )
+
+        # Added part
+        implementation_score = IMPLEMENTATION_WEIGHTS.get(
+            doc.get("implementation_status", "n/a"),
+            0.5
+        )
         
         final_score = (
-            freshness_score * 0.4 +
-            faiss_score * 0.4 +
-            status_score * 0.2
+            freshness_score * 0.35 +
+            faiss_score * 0.35 +
+            status_score * 0.2 +
+            implementation_score * 0.1
         )
+        #final_score = (
+         #   freshness_score * 0.4 +
+          #  faiss_score * 0.4 +
+           # status_score * 0.2
+        #)
         
         return final_score
 
