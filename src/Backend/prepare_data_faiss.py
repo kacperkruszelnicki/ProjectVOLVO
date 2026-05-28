@@ -25,6 +25,18 @@ DOCUMENT_STATUS = {
     "data/raw/dokument1.pdf": "effective",
     "data/raw/dokument2.pdf": "draft"
 }
+# Tags to add: completed, on_going, plan, obsolete, poc, completed, n/a
+IMPLEMENTATION_STATUS = {
+    "data/raw/dokument1.docx": "completed",
+    "data/raw/dokument2.docx": "completed",
+    "data/raw/dokument3.docx": "completed",
+    "data/raw/dokument4.docx": "completed",
+    "data/raw/dokument5.docx": "completed",
+    "data/raw/dokument6.docx": "completed",
+
+    "data/raw/dokument1.pdf": "completed",
+    "data/raw/dokument2.pdf": "completed"
+}
 OUTPUT_FILE = "data/processed/prepared_data_faiss.pkl"
 # Model for creating embeddings
 #MODEL_NAME = 'all-MiniLM-L6-v2'
@@ -57,7 +69,8 @@ documents = [
         "source": "doc1",
         "last_modified": "2023-01-01 10:00:00",
         "tags": ["architecture", "data-engineering", "pipeline"],
-        "status": "effective"
+        "status": "effective",
+        "implementation_status": "completed"
     },
     {
         "content": """Architektura medallion jest podejściem do organizacji danych w warstwach.
@@ -67,7 +80,8 @@ documents = [
         "source": "doc2",
         "last_modified": "2023-05-15 12:00:00",
         "tags": ["medallion", "lakehouse", "organization"],
-        "status": "effective"
+        "status": "effective",
+        "implementation_status": "completed"
     },
     {
         "content": """Data lake to centralne repozytorium danych, które przechowuje dane w ich
@@ -78,7 +92,8 @@ documents = [
         "source": "doc3",
         "last_modified": "2023-08-20 09:30:00",
         "tags": ["data-lake", "storage", "big-data"],
-        "status": "effective"
+        "status": "effective",
+        "implementation_status": "completed"
     }
 ]
 
@@ -203,7 +218,8 @@ def run_preparation():
                         "last_modified": last_mod,
                         "tags": ["file_import", file.split('.')[-1]],
                         "status": status,
-                        "type": "text"
+                        "type": "text",
+                        "implementation_status": IMPLEMENTATION_STATUS.get(file, "n/a") # Added
                     })
 
             image_chunks = extract_and_describe_images(file, last_mod, status)
