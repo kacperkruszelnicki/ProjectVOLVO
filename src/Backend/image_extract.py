@@ -10,7 +10,7 @@ from PIL import Image
 load_dotenv()
 HF_API_KEY = os.getenv("HF_API_KEY")
 HF_API_URL = "https://router.huggingface.co/v1/chat/completions"
-VISION_MODEL = "meta-llama/Llama-3.2-11B-Vision-Instruct"
+VISION_MODEL = "llava-hf/llava-1.5-7b-hf"
 
 MIN_WIDTH = 80
 MIN_HEIGHT = 80

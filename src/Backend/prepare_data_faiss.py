@@ -12,20 +12,25 @@ import re
 from image_extract import extract_and_describe_images
 
 # CONFIG
-DOCX_FILES = ["data/raw/dokument1.docx", "data/raw/dokument2.docx", "data/raw/dokument3.docx", "data/raw/dokument4.docx", "data/raw/dokument5.docx", "data/raw/dokument6.docx"]
-PDF_FILES = ["data/raw/dokument1.pdf", "data/raw/dokument2.pdf"]
+DOCX_FILES = ["../../data/raw/dokument1.doc", "../../data/raw/dokument2.docx", "../../data/raw/dokument3.docx", "../../data/raw/dokument4.doc", "../../data/raw/dokument5.docx"]
+PDF_FILES = ["../../data/raw/dokument1.pdf", "../../data/raw/dokument2.pdf", "../../data/raw/dokument3.pdf", "../../data/raw/dokument4.pdf", "../../data/raw/dokument5.pdf", "../../data/raw/dokument6.pdf", "../../data/raw/dokument7.pdf", "../../data/raw/dokument8.pdf"]
 DOCUMENT_STATUS = {
-    "data/raw/dokument1.docx": "effective",
-    "data/raw/dokument2.docx": "reviewing",
-    "data/raw/dokument3.docx": "draft",
-    "data/raw/dokument4.docx": "obsolete",
-    "data/raw/dokument5.docx": "draft",
-    "data/raw/dokument6.docx": "effective",
+    "../../data/raw/dokument1.doc": "effective",
+    "../../data/raw/dokument2.docx": "reviewing",
+    "../../data/raw/dokument3.docx": "draft",
+    "../../data/raw/dokument4.doc": "obsolete",
+    "../../data/raw/dokument5.docx": "archived",
 
-    "data/raw/dokument1.pdf": "effective",
-    "data/raw/dokument2.pdf": "draft"
+    "../../data/raw/dokument1.pdf": "effective",
+    "../../data/raw/dokument2.pdf": "obsolete",
+    "../../data/raw/dokument3.pdf": "reviewing",
+    "../../data/raw/dokument4.pdf": "draft",
+    "../../data/raw/dokument5.pdf": "effective",
+    "../../data/raw/dokument6.pdf": "obsolete",
+    "../../data/raw/dokument7.pdf": "draft",
+    "../../data/raw/dokument8.pdf": "reviewing"
 }
-OUTPUT_FILE = "data/processed/prepared_data_faiss.pkl"
+OUTPUT_FILE = "../../data/processed/prepared_data_faiss.pkl"
 # Model for creating embeddings
 #MODEL_NAME = 'all-MiniLM-L6-v2'
 MODEL_NAME = "paraphrase-multilingual-MiniLM-L12-v2"
@@ -46,41 +51,7 @@ def load_or_download_model():
         
         return model
 
-# Simple predefined documents
-documents = [
-    {
-        "content": """Pipeline danych to proces przetwarzania danych składający się z kilku etapów.
-        Pierwszym etapem jest ingest danych, czyli pobieranie danych z różnych źródeł takich jak API,
-        bazy danych lub pliki. Następnie dane przechodzą transformację, gdzie są czyszczone,
-        agregowane oraz przekształcane do odpowiedniego formatu. Ostatnim etapem jest ładowanie danych
-        do docelowego systemu, np. hurtowni danych lub data lake.""",
-        "source": "doc1",
-        "last_modified": "2023-01-01 10:00:00",
-        "tags": ["architecture", "data-engineering", "pipeline"],
-        "status": "effective"
-    },
-    {
-        "content": """Architektura medallion jest podejściem do organizacji danych w warstwach.
-        Warstwa bronze zawiera dane surowe w niezmienionej formie. Warstwa silver zawiera dane
-        przetworzone i oczyszczone. Warstwa gold zawiera dane gotowe do analizy biznesowej.
-        Podejście to pozwala na lepszą kontrolę jakości danych oraz ich transformacji.""",
-        "source": "doc2",
-        "last_modified": "2023-05-15 12:00:00",
-        "tags": ["medallion", "lakehouse", "organization"],
-        "status": "effective"
-    },
-    {
-        "content": """Data lake to centralne repozytorium danych, które przechowuje dane w ich
-        natywnej, surowej formie. Umożliwia przechowywanie zarówno danych strukturalnych,
-        jak i niestrukturalnych. Data lake jest często wykorzystywany w systemach big data
-        oraz w analizie danych na dużą skalę. W przeciwieństwie do hurtowni danych,
-        nie wymaga wcześniejszego schematu danych.""",
-        "source": "doc3",
-        "last_modified": "2023-08-20 09:30:00",
-        "tags": ["data-lake", "storage", "big-data"],
-        "status": "effective"
-    }
-]
+
 
 def get_file_metadata(path):
     """Gets last modification date of a file."""
@@ -183,7 +154,15 @@ def run_preparation():
     print(f"Loading embedding model: {MODEL_NAME}...")
     model = load_or_download_model()
 
-    all_docs = documents.copy()
+    all_docs = []
+
+    print("\n--- TEST ŚCIEŻEK ---")
+    for test_file in DOCX_FILES:
+        pelna_sciezka = os.path.abspath(test_file)
+        czy_istnieje = os.path.exists(pelna_sciezka)
+        print(f"Szukam pliku: {pelna_sciezka}")
+        print(f"Czy istnieje? {'✅ TAK' if czy_istnieje else '❌ NIE'}")
+    print("--------------------\n")
 
     # Processing external files
     for file_list, loader in [(DOCX_FILES, load_docx), (PDF_FILES, load_pdf)]:
