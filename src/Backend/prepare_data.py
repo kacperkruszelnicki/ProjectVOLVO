@@ -1,13 +1,15 @@
 import json
 import pickle
 import datetime
+import os
 from docx import Document
 from pypdf import PdfReader
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 # List of documents in local directory
-DOCX_FILES = ["dokument1.docx", "dokument2.docx", "dokument3.docx", "dokument4.docx", "dokument5.docx", "dokument6.docx"]
-PDF_FILES = ["dokument1.pdf", "dokument2.pdf"]
+RAW_DIR = "data/raw"
+PDF_FILES = [os.path.join(RAW_DIR, plik) for plik in os.listdir(RAW_DIR) if os.path.isfile(os.path.join(RAW_DIR, plik))]
+DOCX_FILES = [] 
 OUTPUT_FILE = "prepared_data.pkl"
 
 # DOCUMENTS
@@ -40,10 +42,20 @@ documents = [
 def load_docx(path):
     try:
         doc = Document(path)
-        return "\n".join([p.text for p in doc.paragraphs])
+        text = "\n".join([p.text for p in doc.paragraphs])
+        
+        # 1. Odczyt właściwości użytkownika zapisanych w pliku .docx
+        status = doc.custom_properties.get("status", "draft")
+        impl_status = doc.custom_properties.get("implementation_status", "n/a")
+        
+        # 2. Odczyt wbudowanej, prawdziwej daty modyfikacji dokumentu
+        dt = doc.core_properties.modified
+        last_mod = dt.strftime("%Y-%m-%d %H:%M:%S") if dt else None
+        
+        return text, status, impl_status, last_mod
     except Exception as e:
-        print(f"Loading error {path}: {e}")
-        return ""
+        print(f"DOCX loading error {path}: {e}")
+        return "", "draft", "n/a", None
 
 def load_pdf(path):
     try:
@@ -52,10 +64,26 @@ def load_pdf(path):
         for page in reader.pages:
             content = page.extract_text()
             if content: text += content + "\n"
-        return text
+            
+        # 1. Odczyt metadanych ze struktury PDF
+        meta = reader.metadata or {}
+        status = meta.get("/status", "draft")
+        impl_status = meta.get("/implementationStatus", "n/a")
+        
+        # 2. Parsowanie daty modyfikacji zapisanej w PDF
+        last_mod = None
+        pdf_date = meta.get("/ModDate", "")
+        if pdf_date and pdf_date.startswith("D:"):
+            try:
+                dt = datetime.datetime.strptime(pdf_date[2:14], "%Y%m%d%H%M")
+                last_mod = dt.strftime("%Y-%m-%d %H:%M:%S")
+            except:
+                pass
+                
+        return text, status, impl_status, last_mod
     except Exception as e:
-        print(f"Loading error {path}: {e}")
-        return ""
+        print(f"PDF loading error {path}: {e}")
+        return "", "draft", "n/a", None
 
 def chunk_text(text, size=300, overlap=80):
     if overlap >= size:
@@ -70,23 +98,43 @@ def chunk_text(text, size=300, overlap=80):
 def run_preparation():
     print("Preparing data...")
     
-    # Processing DOCX
+    # 1. Processing DOCX
     for file in DOCX_FILES:
-        content = load_docx(file)
+        # Rozpakowujemy 4 wartości zwracane przez funkcję
+        content, status, impl_status, last_mod = load_docx(file)
+        
+        # Jeśli plik nie był pusty, przetwarzamy tekst
         if content:
             for j, chunk in enumerate(chunk_text(content)):
-                documents.append({"content": chunk, "source": f"{file}_chunk{j}"})
+                documents.append({
+                    "content": chunk, 
+                    "source": f"{file}_chunk{j}",
+                    "status": status,
+                    "implementation_status": impl_status,
+                    "last_modified": last_mod if last_mod else "1970-01-01 00:00:00"
+                })
 
-    # Processing PDF
+    # 2. Processing PDF
     for file in PDF_FILES:
-        content = load_pdf(file)
+        # Rozpakowujemy 4 wartości zwracane przez funkcję
+        content, status, impl_status, last_mod = load_pdf(file)
+        
+        # Jeśli plik nie był pusty, przetwarzamy tekst
         if content:
             for j, chunk in enumerate(chunk_text(content)):
-                documents.append({"content": chunk, "source": f"{file}_chunk{j}"})
+                documents.append({
+                    "content": chunk, 
+                    "source": f"{file}_chunk{j}",
+                    "status": status,
+                    "implementation_status": impl_status,
+                    "last_modified": last_mod if last_mod else "1970-01-01 00:00:00"
+                })
 
     # Building index TF-IDF
-    print(f"Indexing {len(documents)}")
+    print(f"Indexing {len(documents)} chunks...")
     vectorizer = TfidfVectorizer()
+    
+    # Teraz d["content"] na pewno jest czystym stringiem tekstowym
     texts = [d["content"] for d in documents]
     doc_vectors = vectorizer.fit_transform(texts)
 
