@@ -40,6 +40,14 @@ STATUS_WEIGHTS = {
     "obsolete": 0.0
 }
 
+IMPLEMENTATION_WEIGHTS = {
+    "completed": 1.0,
+    "on_going": 0.8,
+    "poc": 0.6,
+    "plan": 0.4,
+    "n/a": 0.5
+}
+
 def log_event(question, reason, sources=None):
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
@@ -172,12 +180,24 @@ def detect_and_resolve_conflicts_smart(docs):
             doc.get("status", "draft"),
             0.5
         )
+
+        # Added part
+        implementation_score = IMPLEMENTATION_WEIGHTS.get(
+            doc.get("implementation_status", "n/a"),
+            0.5
+        )
         
         final_score = (
-            freshness_score * 0.4 +
-            faiss_score * 0.4 +
-            status_score * 0.2
+            freshness_score * 0.35 +
+            faiss_score * 0.35 +
+            status_score * 0.2 +
+            implementation_score * 0.1
         )
+        #final_score = (
+         #   freshness_score * 0.4 +
+          #  faiss_score * 0.4 +
+           # status_score * 0.2
+        #)
         
         return final_score
 
@@ -208,6 +228,64 @@ def detect_and_resolve_conflicts_smart(docs):
 
     return best_docs, status, rejected_info
 
+def rank_documents(docs):
+
+    scored_docs = []
+
+    for doc in docs:
+
+        try:
+            timestamp = datetime.datetime.strptime(
+                doc.get("last_modified", "1970-01-01 00:00:00"),
+                "%Y-%m-%d %H:%M:%S"
+            ).timestamp()
+        except:
+            timestamp = 0
+
+        freshness_score = timestamp / 2000000000
+
+        faiss_score = 1 / (1 + doc.get("score", 1.0))
+
+        status_score = STATUS_WEIGHTS.get(
+            doc.get("status", "draft"),
+            0.5
+        )
+
+        implementation_score = IMPLEMENTATION_WEIGHTS.get(
+            doc.get("implementation_status", "n/a"),
+            0.5
+        )
+
+        final_score = (
+            faiss_score * 0.50 +
+            freshness_score * 0.20 +
+            status_score * 0.20 +
+            implementation_score * 0.10
+        )
+
+        doc["final_score"] = final_score
+
+        scored_docs.append(doc)
+
+    scored_docs.sort(
+        key=lambda x: x["final_score"],
+        reverse=True
+    )
+
+    best_docs = scored_docs[:5]
+    rejected_docs = scored_docs[5:]
+
+    rejected_info = []
+    cutoff_doc = best_docs[-1]["source"] if best_docs else None 
+
+    for rd in rejected_docs:
+        rejected_info.append({
+            "rejected_doc": rd["source"],
+            "rejected_score": round(rd["final_score"], 4)
+        })
+
+    return best_docs, rejected_info
+
 def ask(question, profile="business"):
     initial_docs = search_faiss(question)
     # removing obsolete documents
@@ -217,16 +295,22 @@ def ask(question, profile="business"):
         return {"answer": "No appropriate data found.", "sources": []}
 
     # Detecting and resolving conflicts
-    final_docs, status, rejected = detect_and_resolve_conflicts_smart(initial_docs)
+    #final_docs, status, rejected = detect_and_resolve_conflicts_smart(initial_docs)
+    final_docs, rejected = rank_documents(initial_docs)
+    status = "RANKED_BY_METADATA"
+    
     print(f"Status of chosen documents: {status}")
 
-    if rejected:
+    if rejected and isinstance(rejected, list):
         print(f"Rejected documents: {rejected}")
-        log_event(
-            question,
-            f"Conflict resolved: {status}",
-            sources=[r["rejected_doc"] for r in rejected]
-        )
+        try:
+            log_event(
+                question,
+                f"Conflict resolved: {status}",
+                sources=[r["rejected_doc"] for r in rejected if "rejected_doc" in r]
+            )
+        except Exception as log_err:
+            print(f"Logging inside ask() failed: {log_err}")
 
     context = "\n".join([f"[Source: {d['source']} | Date: {d['last_modified']}]\n{d['content']}" for d in final_docs])
     

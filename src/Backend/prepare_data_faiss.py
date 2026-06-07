@@ -10,27 +10,12 @@ import numpy as np
 import re
 
 from image_extract import extract_and_describe_images
-
+RAW_DIR = "data/raw"
 # CONFIG
-DOCX_FILES = ["../../data/raw/dokument1.doc", "../../data/raw/dokument2.docx", "../../data/raw/dokument3.docx", "../../data/raw/dokument4.doc", "../../data/raw/dokument5.docx"]
-PDF_FILES = ["../../data/raw/dokument1.pdf", "../../data/raw/dokument2.pdf", "../../data/raw/dokument3.pdf", "../../data/raw/dokument4.pdf", "../../data/raw/dokument5.pdf", "../../data/raw/dokument6.pdf", "../../data/raw/dokument7.pdf", "../../data/raw/dokument8.pdf"]
-DOCUMENT_STATUS = {
-    "../../data/raw/dokument1.doc": "effective",
-    "../../data/raw/dokument2.docx": "reviewing",
-    "../../data/raw/dokument3.docx": "draft",
-    "../../data/raw/dokument4.doc": "obsolete",
-    "../../data/raw/dokument5.docx": "archived",
+DOCX_FILES = []
+PDF_FILES = [os.path.join(RAW_DIR, plik) for plik in os.listdir(RAW_DIR) if os.path.isfile(os.path.join(RAW_DIR, plik))]
 
-    "../../data/raw/dokument1.pdf": "effective",
-    "../../data/raw/dokument2.pdf": "obsolete",
-    "../../data/raw/dokument3.pdf": "reviewing",
-    "../../data/raw/dokument4.pdf": "draft",
-    "../../data/raw/dokument5.pdf": "effective",
-    "../../data/raw/dokument6.pdf": "obsolete",
-    "../../data/raw/dokument7.pdf": "draft",
-    "../../data/raw/dokument8.pdf": "reviewing"
-}
-OUTPUT_FILE = "../../data/processed/prepared_data_faiss.pkl"
+OUTPUT_FILE = "data/processed/prepared_data_faiss.pkl"
 # Model for creating embeddings
 #MODEL_NAME = 'all-MiniLM-L6-v2'
 MODEL_NAME = "paraphrase-multilingual-MiniLM-L12-v2"
@@ -51,7 +36,44 @@ def load_or_download_model():
         
         return model
 
-
+# Simple predefined documents
+documents = [
+    {
+        "content": """Pipeline danych to proces przetwarzania danych składający się z kilku etapów.
+        Pierwszym etapem jest ingest danych, czyli pobieranie danych z różnych źródeł takich jak API,
+        bazy danych lub pliki. Następnie dane przechodzą transformację, gdzie są czyszczone,
+        agregowane oraz przekształcane do odpowiedniego formatu. Ostatnim etapem jest ładowanie danych
+        do docelowego systemu, np. hurtowni danych lub data lake.""",
+        "source": "doc1",
+        "last_modified": "2023-01-01 10:00:00",
+        "tags": ["architecture", "data-engineering", "pipeline"],
+        "status": "effective",
+        "implementation_status": "completed"
+    },
+    {
+        "content": """Architektura medallion jest podejściem do organizacji danych w warstwach.
+        Warstwa bronze zawiera dane surowe w niezmienionej formie. Warstwa silver zawiera dane
+        przetworzone i oczyszczone. Warstwa gold zawiera dane gotowe do analizy biznesowej.
+        Podejście to pozwala na lepszą kontrolę jakości danych oraz ich transformacji.""",
+        "source": "doc2",
+        "last_modified": "2023-05-15 12:00:00",
+        "tags": ["medallion", "lakehouse", "organization"],
+        "status": "effective",
+        "implementation_status": "completed"
+    },
+    {
+        "content": """Data lake to centralne repozytorium danych, które przechowuje dane w ich
+        natywnej, surowej formie. Umożliwia przechowywanie zarówno danych strukturalnych,
+        jak i niestrukturalnych. Data lake jest często wykorzystywany w systemach big data
+        oraz w analizie danych na dużą skalę. W przeciwieństwie do hurtowni danych,
+        nie wymaga wcześniejszego schematu danych.""",
+        "source": "doc3",
+        "last_modified": "2023-08-20 09:30:00",
+        "tags": ["data-lake", "storage", "big-data"],
+        "status": "effective",
+        "implementation_status": "completed"
+    }
+]
 
 def get_file_metadata(path):
     """Gets last modification date of a file."""
@@ -64,10 +86,20 @@ def get_file_metadata(path):
 def load_docx(path):
     try:
         doc = Document(path)
-        return "\n".join([p.text for p in doc.paragraphs])
+        text = "\n".join([p.text for p in doc.paragraphs])
+        
+        # 1. Odczyt właściwości użytkownika zapisanych w pliku .docx
+        status = doc.custom_properties.get("status", "draft")
+        impl_status = doc.custom_properties.get("implementation_status", "n/a")
+        
+        # 2. Odczyt wbudowanej, prawdziwej daty modyfikacji dokumentu
+        dt = doc.core_properties.modified
+        last_mod = dt.strftime("%Y-%m-%d %H:%M:%S") if dt else None
+        
+        return text, status, impl_status, last_mod
     except Exception as e:
         print(f"DOCX loading error {path}: {e}")
-        return ""
+        return "", "draft", "n/a", None
 
 def load_pdf(path):
     try:
@@ -76,10 +108,26 @@ def load_pdf(path):
         for page in reader.pages:
             content = page.extract_text()
             if content: text += content + "\n"
-        return text
+            
+        # 1. Odczyt metadanych ze struktury PDF
+        meta = reader.metadata or {}
+        status = meta.get("/status", "draft")
+        impl_status = meta.get("/implementationStatus", "n/a")
+        
+        # 2. Parsowanie daty modyfikacji zapisanej w PDF
+        last_mod = None
+        pdf_date = meta.get("/ModDate", "")
+        if pdf_date and pdf_date.startswith("D:"):
+            try:
+                dt = datetime.datetime.strptime(pdf_date[2:14], "%Y%m%d%H%M")
+                last_mod = dt.strftime("%Y-%m-%d %H:%M:%S")
+            except:
+                pass
+                
+        return text, status, impl_status, last_mod
     except Exception as e:
         print(f"PDF loading error {path}: {e}")
-        return ""
+        return "", "draft", "n/a", None
 
 def chunk_text(text, size=500, overlap=100):
     chunks = []
@@ -169,23 +217,30 @@ def run_preparation():
         for file in file_list:
             if not os.path.exists(file):
                 continue
-            last_mod = get_file_metadata(file)
-            status = DOCUMENT_STATUS.get(file, "draft")
-            content = loader(file)
+            
+            # POPRAWKA 1: Rozpakowujemy 4 wartości bezpośrednio wyciągnięte z pliku
+            content, file_status, file_impl_status, file_last_mod = loader(file)
+            
+            # POPRAWKA 2: Jeśli plik nie miał wewnętrznej daty, używamy rezerwowej z systemu operacyjnego
+            if not file_last_mod:
+                file_last_mod = get_file_metadata(file)
+                
             if content:
-                #chunks = chunk_text(content)
+                # chunks = chunk_text(content)
                 chunks = semantic_chunk_text(content, model)
                 for j, chunk in enumerate(chunks):
                     all_docs.append({
                         "content": chunk,
                         "source": file,
-                        "last_modified": last_mod,
+                        "last_modified": file_last_mod,
                         "tags": ["file_import", file.split('.')[-1]],
-                        "status": status,
-                        "type": "text"
+                        "status": file_status,             # Używamy wartości z pliku
+                        "type": "text",
+                        "implementation_status": file_impl_status  # Używamy wartości z pliku
                     })
 
-            image_chunks = extract_and_describe_images(file, last_mod, status)
+            # Dla ekstrakcji obrazów przekazujemy również aktualne dane z pliku
+            image_chunks = extract_and_describe_images(file, file_last_mod, file_status)
             if image_chunks:
                 all_docs.extend(image_chunks)
 
