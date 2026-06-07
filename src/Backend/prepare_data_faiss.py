@@ -10,7 +10,7 @@ import numpy as np
 import re
 
 from image_extract import extract_and_describe_images
-RAW_DIR = "data/raw"
+RAW_DIR = "../../data/raw"
 # CONFIG
 DOCX_FILES = []
 PDF_FILES = [os.path.join(RAW_DIR, plik) for plik in os.listdir(RAW_DIR) if os.path.isfile(os.path.join(RAW_DIR, plik))]

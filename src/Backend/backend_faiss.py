@@ -349,11 +349,22 @@ def api_ask():
     return jsonify(ask(data.get("question", ""), data.get("profile", "business")))
 
 if __name__ == "__main__":
-    # Start in CLI by default
-    while True:
-        q = input("\nQuestion (or 'exit'): ")
-        if q.lower() == 'exit': break
-        prof = input("Profil (business/engineer/architect): ").lower() or "business"
-        res = ask(q, prof)
-        print(f"\nANSWER: {res['answer']}")
-        print(f"SOURCES: {res['sources']}")
+    import sys
+
+    # Jeśli przy uruchamianiu skryptu dopiszesz słowo "cli", odpali się tryb testowy.
+    # Uruchomienie: python backend_faiss.py cli
+    if len(sys.argv) > 1 and sys.argv[1].lower() == "cli":
+        print("--- URUCHOMIONO TRYB TESTOWY W TERMINALU (CLI) ---")
+        while True:
+            q = input("\nQuestion (or 'exit'): ")
+            if q.lower() == 'exit': break
+            prof = input("Profil (business/engineer/architect): ").lower() or "business"
+            res = ask(q, prof)
+            print(f"\nANSWER: {res['answer']}")
+            print(f"SOURCES: {res['sources']}")
+            print(f"STATUS: {res['status']}")
+    
+    else:
+        print("--- URUCHAMIANIE SERWERA API DLA FRONTENDU ---")
+        print("Serwer działa na porcie 5000. Czekam na zapytania z Reacta...")
+        app.run(host="0.0.0.0", port=5000, debug=True)
