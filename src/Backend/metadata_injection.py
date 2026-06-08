@@ -94,7 +94,7 @@ def zapisz_i_weryfikuj_pdf(path, status, impl_status):
     # Kopiujemy dotychczasowe metadane (jeśli są) i dodajemy nasze
     nowe_metadane = {k: v for k, v in (reader.metadata or {}).items()}
     nowe_metadane["/status"] = status
-    nowe_metadane["/mplementation_status"] = impl_status
+    nowe_metadane["/implementation_status"] = impl_status
     
     # Generujemy datę w formacie PDF (np. D:20260607140000Z)
     teraz_pdf = "D:" + datetime.datetime.now().strftime("%Y%m%d%H%M%S") + "Z"
