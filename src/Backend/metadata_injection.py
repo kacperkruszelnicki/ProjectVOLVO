@@ -47,15 +47,15 @@ def zapisz_i_weryfikuj_docx(path, status, impl_status):
     
     # Dodawanie lub aktualizacja tagu Status
     try:
-        custom_props['Status'] = status
+        custom_props['status'] = status
     except KeyError:
-        custom_props.add_property('Status', status)
+        custom_props.add_property('status', status)
         
     # Dodawanie lub aktualizacja tagu ImplementationStatus
     try:
-        custom_props['ImplementationStatus'] = impl_status
+        custom_props['implementation_status'] = impl_status
     except KeyError:
-        custom_props.add_property('ImplementationStatus', impl_status)
+        custom_props.add_property('implementation_status', impl_status)
     
     # Wymuszenie aktualizacji wbudowanej daty modyfikacji na "teraz"
     doc.core_properties.modified = datetime.datetime.now()
@@ -64,13 +64,13 @@ def zapisz_i_weryfikuj_docx(path, status, impl_status):
 
     # 2. ODCZYT (WERYFIKACJA)
     doc_check = Document(path)
-    odczytany_status = doc_check.custom_properties.get('Status', 'BRAK')
-    odczytany_impl = doc_check.custom_properties.get('ImplementationStatus', 'BRAK')
+    odczytany_status = doc_check.custom_properties.get('status', 'BRAK')
+    odczytany_impl = doc_check.custom_properties.get('implementation_status', 'BRAK')
     odczytana_data = doc_check.core_properties.modified
     
     print("  🔍 Weryfikacja odczytu:")
-    print(f"    ▪️ Status:                 {odczytany_status}")
-    print(f"    ▪️ ImplementationStatus:   {odczytany_impl}")
+    print(f"    ▪️ status:                 {odczytany_status}")
+    print(f"    ▪️ implementation_status:   {odczytany_impl}")
     print(f"    ▪️ Last Modified (Word):   {odczytana_data}")
 
 
@@ -93,8 +93,8 @@ def zapisz_i_weryfikuj_pdf(path, status, impl_status):
         
     # Kopiujemy dotychczasowe metadane (jeśli są) i dodajemy nasze
     nowe_metadane = {k: v for k, v in (reader.metadata or {}).items()}
-    nowe_metadane["/Status"] = status
-    nowe_metadane["/ImplementationStatus"] = impl_status
+    nowe_metadane["/status"] = status
+    nowe_metadane["/mplementation_status"] = impl_status
     
     # Generujemy datę w formacie PDF (np. D:20260607140000Z)
     teraz_pdf = "D:" + datetime.datetime.now().strftime("%Y%m%d%H%M%S") + "Z"
@@ -112,8 +112,8 @@ def zapisz_i_weryfikuj_pdf(path, status, impl_status):
     meta = reader_check.metadata or {}
     
     print("  🔍 Weryfikacja odczytu:")
-    print(f"    ▪️ Status:                 {meta.get('/Status', 'BRAK')}")
-    print(f"    ▪️ ImplementationStatus:   {meta.get('/ImplementationStatus', 'BRAK')}")
+    print(f"    ▪️ status:                 {meta.get('/status', 'BRAK')}")
+    print(f"    ▪️ implementation_status:   {meta.get('/implementation_status', 'BRAK')}")
     print(f"    ▪️ ModDate (PDF raw):      {meta.get('/ModDate', 'BRAK')}")
 
 

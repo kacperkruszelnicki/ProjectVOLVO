@@ -112,7 +112,7 @@ def load_pdf(path):
         # 1. Odczyt metadanych ze struktury PDF
         meta = reader.metadata or {}
         status = meta.get("/status", "draft")
-        impl_status = meta.get("/implementationStatus", "n/a")
+        impl_status = meta.get("/implementatio_status", "n/a")
         
         # 2. Parsowanie daty modyfikacji zapisanej w PDF
         last_mod = None
