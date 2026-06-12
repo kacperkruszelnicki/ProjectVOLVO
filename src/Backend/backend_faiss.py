@@ -9,6 +9,7 @@ import numpy as np
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from sentence_transformers import SentenceTransformer
+import time
 
 app = Flask(__name__)
 CORS(app)
@@ -271,9 +272,21 @@ def rank_documents(docs):
         key=lambda x: x["final_score"],
         reverse=True
     )
+    best_score = scored_docs[0]["final_score"]
+    relative_threshold = 0.8
 
-    best_docs = scored_docs[:5]
+    best_docs = []
+    candidate_docs = scored_docs[:5]
     rejected_docs = scored_docs[5:]
+
+    for doc in candidate_docs:
+
+        ratio = doc["final_score"] / best_score
+    
+        if ratio >= relative_threshold:
+            best_docs.append(doc)
+        else:
+            rejected_docs.append(doc)
 
     rejected_info = []
     cutoff_doc = best_docs[-1]["source"] if best_docs else None 
@@ -287,16 +300,27 @@ def rank_documents(docs):
     return best_docs, rejected_info
 
 def ask(question, profile="business"):
+    find_start = time.perf_counter()
     initial_docs = search_faiss(question)
+    find_end = time.perf_counter() - find_start
+    print(f"Time of finding documents (faiss): {find_end:.3f} s")
     # removing obsolete documents
+    obsolete_start = time.perf_counter()
     initial_docs = [d for d in initial_docs if d.get("status") != "obsolete"]
+    obsolete_end = time.perf_counter() - obsolete_start
+    print(f"Time of rejecting obsolete documents: {obsolete_end:.3f} s")
+    
     if not initial_docs:
         log_event(question, "No matching documents found")
         return {"answer": "No appropriate data found.", "sources": []}
 
     # Detecting and resolving conflicts
+    ranking_start = time.perf_counter()
     #final_docs, status, rejected = detect_and_resolve_conflicts_smart(initial_docs)
     final_docs, rejected = rank_documents(initial_docs)
+    ranking_end = time.perf_counter() - ranking_start
+    print(f"Time of ranking documents: {ranking_end:.3f} s")
+
     status = "RANKED_BY_METADATA"
     
     print(f"Status of chosen documents: {status}")
@@ -331,8 +355,12 @@ def ask(question, profile="business"):
     }
     
     try:
+        llm_start = time.perf_counter()
         r = requests.post(API_URL, headers=headers, json=payload, timeout=30)
         answer = r.json()["choices"][0]["message"]["content"]
+        llm_end = time.perf_counter() - llm_start
+        print(f"Time of llm query: {llm_end:.3f} s")
+        print(f"Total time of processing: {find_end+obsolete_end+ranking_end+llm_end} s")
         return {
             "answer": answer,
             "sources": [f"{d['source']} | {d['status']} | ({d['last_modified']})" for d in final_docs],
