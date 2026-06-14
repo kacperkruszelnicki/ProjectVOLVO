@@ -8,9 +8,9 @@ interface Props {
 }
 
 const personas = [
-  { id: 'business' as Persona, label: 'Business User', icon: '👔', desc: 'Uproszczone odpowiedzi' },
-  { id: 'engineer' as Persona, label: 'Data Engineer', icon: '⚙️', desc: 'Techniczne szczegóły' },
-  { id: 'architect' as Persona, label: 'Architect',    icon: '🏗️', desc: 'Kontekst systemowy' },
+  { id: 'business' as Persona, label: 'Business User', icon: '👔', desc: 'Simplified answers' },
+  { id: 'engineer' as Persona, label: 'Data Engineer', icon: '⚙️', desc: 'Technicals details' },
+  { id: 'architect' as Persona, label: 'Architect',    icon: '🏗️', desc: 'System context' },
 ];
 
 export default function PersonaSelector({ current, onChange }: Props) {

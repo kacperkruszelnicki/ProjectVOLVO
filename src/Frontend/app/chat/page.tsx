@@ -85,7 +85,7 @@ export default function ChatPage() {
       setMessages((prev) => [...prev, {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: 'Błąd połączenia z serwerem. Spróbuj ponownie.',
+        content: 'Server error. Try again.',
         timestamp: new Date(),
       }]);
     } finally {
@@ -110,7 +110,7 @@ export default function ChatPage() {
       >
         <div className="h-full flex flex-col flex-shrink-0" style={{ width: '340px' }}>
           
-          {/* Odsunięcie logo na sztywne 20px */}
+          
           <div className="border-b border-slate-200 flex items-center justify-between bg-white" style={{ padding: '24px 20px' }}>
             <div className="flex items-center gap-4">
               <div className="rounded-full border-[3px] border-blue-900 flex items-center justify-center text-[15px] font-bold text-blue-900 shadow-sm" style={{ width: '44px', height: '44px' }}>
@@ -134,16 +134,15 @@ export default function ChatPage() {
             <p className="text-[12px] font-extrabold uppercase tracking-widest text-slate-400" style={{ marginBottom: '24px' }}>Analiza Kontekstu</p>
             
             {currentSources.length === 0 && currentRejected.length === 0 && (
-              <p className="text-[13px] text-slate-400 italic">Brak dokumentów. Zadaj pytanie.</p>
+              <p className="text-[13px] text-slate-400 italic">No documents. Ask question.</p>
             )}
 
             {currentSources.length > 0 && (
               <div style={{ marginBottom: '40px' }}>
                 <span className="text-[11px] font-bold uppercase tracking-wider text-green-600 flex items-center gap-2" style={{ marginBottom: '16px' }}>
-                  <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"/> Użyte jako źródło
+                  <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"/> Used as a source.
                 </span>
                 
-                {/* Zwiększony odstęp między plikami na 16px sztywno */}
                 <div className="flex flex-col" style={{ gap: '16px' }}>
                   {currentSources.map((s, idx) => (
                     <div key={`src-${idx}`} className="border border-slate-200 bg-white rounded-xl shadow-sm overflow-hidden flex flex-col">
@@ -161,10 +160,10 @@ export default function ChatPage() {
                       {expandedDoc === `src-${idx}` && (
                         <div className="bg-slate-50/50 border-t border-slate-100 flex flex-col" style={{ padding: '8px 16px 16px 16px', gap: '12px' }}>
                           <div className="flex flex-wrap gap-2" style={{ marginTop: '4px' }}>
-                            <span className="bg-green-100 text-green-700 rounded-md text-[10px] font-bold uppercase tracking-wider border border-green-200" style={{ padding: '4px 8px' }}>✔ Zaakceptowano</span>
+                            <span className="bg-green-100 text-green-700 rounded-md text-[10px] font-bold uppercase tracking-wider border border-green-200" style={{ padding: '4px 8px' }}>✔ Accepted</span>
                           </div>
                           <div className="bg-white rounded-md border border-slate-200 text-slate-500 text-[12px] leading-relaxed break-all font-mono shadow-inner" style={{ padding: '14px' }}>
-                            <span className="font-bold text-slate-400 uppercase text-[9px] block tracking-wider" style={{ marginBottom: '8px' }}>Pełna ścieżka pliku:</span>
+                            <span className="font-bold text-slate-400 uppercase text-[9px] block tracking-wider" style={{ marginBottom: '8px' }}>Full length path:</span>
                             {s.title}
                           </div>
                         </div>
@@ -178,7 +177,7 @@ export default function ChatPage() {
             {currentRejected.length > 0 && (
               <div>
                 <span className="text-[11px] font-bold uppercase tracking-wider text-red-500 flex items-center gap-2" style={{ marginBottom: '16px' }}>
-                  <div className="w-2.5 h-2.5 rounded-full bg-red-400"/> Odrzucone przez RAG
+                  <div className="w-2.5 h-2.5 rounded-full bg-red-400"/> Rejected by RAG
                 </span>
                 <div className="flex flex-col" style={{ gap: '16px' }}>
                   {currentRejected.map((r, idx) => (
@@ -197,13 +196,13 @@ export default function ChatPage() {
                       {expandedDoc === `rej-${idx}` && (
                         <div className="bg-red-50/30 border-t border-red-100 flex flex-col" style={{ padding: '8px 16px 16px 16px', gap: '12px' }}>
                           <div className="flex flex-wrap gap-2" style={{ marginTop: '4px' }}>
-                            <span className="bg-red-100 text-red-700 rounded-md text-[10px] font-bold uppercase tracking-wider border border-red-200" style={{ padding: '4px 8px' }}>✖ Odrzucono</span>
+                            <span className="bg-red-100 text-red-700 rounded-md text-[10px] font-bold uppercase tracking-wider border border-red-200" style={{ padding: '4px 8px' }}>✖ Rejected</span>
                             <span className="bg-white text-slate-600 rounded-md text-[10px] font-bold tracking-wider border border-slate-200 shadow-sm" style={{ padding: '4px 8px' }}>
                               Wynik: {r.rejected_score.toFixed(3)}
                             </span>
                           </div>
                           <div className="bg-white rounded-md border border-red-100 text-slate-500 text-[12px] leading-relaxed break-all font-mono shadow-inner" style={{ padding: '14px' }}>
-                            <span className="font-bold text-slate-400 uppercase text-[9px] block tracking-wider" style={{ marginBottom: '8px' }}>Pełna ścieżka pliku:</span>
+                            <span className="font-bold text-slate-400 uppercase text-[9px] block tracking-wider" style={{ marginBottom: '8px' }}>Full length path:</span>
                             {r.rejected_doc}
                           </div>
                         </div>
@@ -230,8 +229,7 @@ export default function ChatPage() {
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
           </button>
         )}
-
-        {/* Dodany sztywny padding góra-dół dla kontenera czatu */}
+      
         <div className="flex-1 overflow-y-auto flex flex-col items-center messages-container" style={{ padding: '40px 32px' }}>
           <div className="w-full max-w-3xl flex flex-col min-w-0" style={{ gap: '24px', paddingBottom: '24px' }}>
             
@@ -241,7 +239,7 @@ export default function ChatPage() {
                 <div>
                   <h2 className="text-3xl font-extrabold text-slate-800 tracking-tight" style={{ marginBottom: '16px' }}>Volvo Knowledge Assistant</h2>
                   <p className="text-[16px] text-slate-500 max-w-lg mx-auto leading-relaxed">
-                    Zadaj pytanie, a przeanalizuję dostępną dokumentację, aby dostarczyć Ci precyzyjną odpowiedź.
+                    Ask a question and I will analyze the available documentation to provide you with a precise answer.
                   </p>
                 </div>
               </div>
@@ -256,7 +254,6 @@ export default function ChatPage() {
           </div>
         </div>
 
-        {/* --- POLE WPISYWANIA ZE SZTYWNYMI MARGINESAMI --- */}
         <div className="bg-gradient-to-t from-white via-white to-white/0 flex justify-center" style={{ padding: '24px 24px 32px 24px' }}>
           <div className="w-full max-w-3xl flex flex-col">
             
@@ -270,7 +267,7 @@ export default function ChatPage() {
                 onKeyDown={handleKeyDown}
                 placeholder="Zadaj pytanie..."
                 rows={1}
-                // Sztywny margines z lewej (paddingLeft: 4px) na samym polu + paddingLeft 20px w kontenerze = brak szans na dotknięcie ramki!
+                
                 className="flex-1 bg-transparent resize-none outline-none text-[15px] text-slate-800 placeholder-slate-400 custom-scrollbar"
                 style={{ wordBreak: 'break-word', padding: '10px 0px 10px 4px', maxHeight: '180px' }}
               />
@@ -289,7 +286,7 @@ export default function ChatPage() {
             </div>
 
             <p className="text-[13px] font-medium text-slate-400 text-center" style={{ marginTop: '16px' }}>
-              Wybrana rola: <span className="font-bold text-slate-600">{persona === 'business' ? 'Business User' : persona === 'engineer' ? 'Data Engineer' : 'Architect'}</span> · Enter aby wysłać · Shift+Enter nowa linia
+              Chosen role: <span className="font-bold text-slate-600">{persona === 'business' ? 'Business User' : persona === 'engineer' ? 'Data Engineer' : 'Architect'}</span> · Enter to send · Shift+Enter new line
             </p>
           </div>
         </div>
