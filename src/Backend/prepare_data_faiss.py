@@ -10,7 +10,7 @@ import numpy as np
 import re
 
 from image_extract import extract_and_describe_images
-RAW_DIR = "data/raw"
+RAW_DIR = "../../data/raw"
 # CONFIG
 DOCX_FILES = [
     os.path.join(RAW_DIR, plik) 
@@ -23,7 +23,7 @@ PDF_FILES = [
     if os.path.isfile(os.path.join(RAW_DIR, plik)) and plik.lower().endswith('.pdf')
 ]
 
-OUTPUT_FILE = "data/processed/prepared_data_faiss.pkl"
+OUTPUT_FILE = "../../data/processed/prepared_data_faiss.pkl"
 # Model for creating embeddings
 #MODEL_NAME = 'all-MiniLM-L6-v2'
 MODEL_NAME = "paraphrase-multilingual-MiniLM-L12-v2"

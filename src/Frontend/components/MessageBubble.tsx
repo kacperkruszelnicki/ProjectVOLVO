@@ -10,31 +10,24 @@ interface Props {
 export default function MessageBubble({ message }: Props) {
   const isUser = message.role === 'user';
 
-  // --- WIDOK UŻYTKOWNIKA ---
   if (isUser) {
     return (
-      <div className="flex justify-end w-full mb-4">
-        {/* whitespace-pre-wrap pozwala zachować entery, które wpisujesz w okienku */}
-        <div className="bg-blue-900 text-white px-5 py-3 rounded-2xl rounded-tr-sm max-w-[80%] text-sm shadow-sm whitespace-pre-wrap">
+      <div className="flex justify-end w-full mb-6">
+        {/* Magiczne wordBreak: 'break-word' sprawia, że tekst łamie się w naturalnych miejscach, ale ratuje ramkę przed wylaniem */}
+        <div className="bg-blue-900 text-white px-6 py-4 rounded-[24px] rounded-tr-sm max-w-[85%] md:max-w-[75%] text-[15px] shadow-sm whitespace-pre-wrap leading-relaxed" style={{ wordBreak: 'break-word' }}>
           {message.content}
         </div>
       </div>
     );
   }
 
-  // --- WIDOK SYSTEMU AI ---
   return (
-    <div className="flex flex-col gap-2 w-full max-w-[85%] mb-4">
-      {/* Tutaj użyliśmy react-markdown oraz specjalnych klas Tailwind:
-        [&_ul]:list-disc - przywraca kropki w listach
-        [&_ol]:list-decimal - przywraca cyfry w listach
-        [&_strong]:font-bold - przywraca pogrubienia
-        [&_p]:mb-3 - dodaje odstępy między akapitami
-      */}
-      <div className="bg-white border border-slate-200 text-slate-800 px-5 py-4 rounded-2xl rounded-tl-sm text-sm shadow-sm leading-relaxed 
-                      [&_ul]:list-disc [&_ul]:ml-5 [&_ul]:mb-3 
-                      [&_ol]:list-decimal [&_ol]:ml-5 [&_ol]:mb-3 
-                      [&_li]:mb-1 [&_strong]:font-semibold [&_p]:mb-3 last:[&_p]:mb-0">
+    <div className="flex flex-col gap-2 w-full max-w-[95%] md:max-w-[85%] mb-6">
+      <div className="bg-white border border-slate-200 text-slate-800 px-7 py-6 rounded-[24px] rounded-tl-sm text-[15px] shadow-sm leading-relaxed 
+                      [&_ul]:list-disc [&_ul]:ml-6 [&_ul]:mb-4 
+                      [&_ol]:list-decimal [&_ol]:ml-6 [&_ol]:mb-4 
+                      [&_li]:mb-2 [&_strong]:font-bold [&_strong]:text-slate-900 [&_p]:mb-4 last:[&_p]:mb-0" 
+           style={{ wordBreak: 'break-word' }}>
         <ReactMarkdown>
           {message.content}
         </ReactMarkdown>
