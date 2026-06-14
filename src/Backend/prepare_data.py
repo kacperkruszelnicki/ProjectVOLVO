@@ -8,8 +8,16 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 
 # List of documents in local directory
 RAW_DIR = "data/raw"
-PDF_FILES = [os.path.join(RAW_DIR, plik) for plik in os.listdir(RAW_DIR) if os.path.isfile(os.path.join(RAW_DIR, plik))]
-DOCX_FILES = [] 
+DOCX_FILES = [
+    os.path.join(RAW_DIR, plik) 
+    for plik in os.listdir(RAW_DIR) 
+    if os.path.isfile(os.path.join(RAW_DIR, plik)) and plik.lower().endswith('.docx')
+]
+PDF_FILES = [
+    os.path.join(RAW_DIR, plik) 
+    for plik in os.listdir(RAW_DIR) 
+    if os.path.isfile(os.path.join(RAW_DIR, plik)) and plik.lower().endswith('.pdf')
+]
 OUTPUT_FILE = "prepared_data.pkl"
 
 # DOCUMENTS
@@ -44,15 +52,23 @@ def load_docx(path):
         doc = Document(path)
         text = "\n".join([p.text for p in doc.paragraphs])
         
-        # 1. Odczyt właściwości użytkownika zapisanych w pliku .docx
-        status = doc.custom_properties.get("status", "draft")
-        impl_status = doc.custom_properties.get("implementation_status", "n/a")
+        # Szybki dostęp do core_properties
+        props = doc.core_properties
+        
+        # 1. Odczyt właściwości wbudowanych (zamiast custom_properties)
+        # Używamy 'or', aby przypisać domyślną wartość, jeśli pole jest puste (None)
+        status = props.content_status or "draft"
+        impl_status = props.category or "n/a"
         
         # 2. Odczyt wbudowanej, prawdziwej daty modyfikacji dokumentu
-        dt = doc.core_properties.modified
+        dt = props.modified
         last_mod = dt.strftime("%Y-%m-%d %H:%M:%S") if dt else None
         
         return text, status, impl_status, last_mod
+        
+    except Exception as e:
+        print(f"❌ Błąd podczas ładowania pliku {path}: {e}")
+        return "", "draft", "n/a", None
     except Exception as e:
         print(f"DOCX loading error {path}: {e}")
         return "", "draft", "n/a", None

@@ -8,8 +8,16 @@ import random
 RAW_DIR = "data/raw"
 
 # 1. Automatyczne pobranie wszystkich plików z folderu (z poprzedniego kroku)
-PDF_FILES = [os.path.join(RAW_DIR, plik) for plik in os.listdir(RAW_DIR) if os.path.isfile(os.path.join(RAW_DIR, plik))]
-DOCX_FILES = []  # Pusta lista, skoro masz same PDFy
+DOCX_FILES = [
+    os.path.join(RAW_DIR, plik) 
+    for plik in os.listdir(RAW_DIR) 
+    if os.path.isfile(os.path.join(RAW_DIR, plik)) and plik.lower().endswith('.docx')
+]
+PDF_FILES = [
+    os.path.join(RAW_DIR, plik) 
+    for plik in os.listdir(RAW_DIR) 
+    if os.path.isfile(os.path.join(RAW_DIR, plik)) and plik.lower().endswith('.pdf')
+] # Pusta lista, skoro masz same PDFy
 
 # 2. Definiujemy dostępne pule statusów (zgodne z wagami w Twoim Flasku)
 MOZLIWE_STATUSY = ["effective", "reviewing", "draft", "archived", "obsolete"]
@@ -17,11 +25,11 @@ MOZLIWE_IMPLEMENTACJE = ["completed", "on_going", "poc", "plan", "n/a"]
 
 # 3. Dynamiczne i losowe generowanie słowników dla wszystkich wykrytych plików
 DOCUMENT_STATUS = {
-    plik: random.choice(MOZLIWE_STATUSY) for plik in PDF_FILES
+    plik: random.choice(MOZLIWE_STATUSY) for plik in PDF_FILES + DOCX_FILES
 }
 
 IMPLEMENTATION_STATUS = {
-    plik: random.choice(MOZLIWE_IMPLEMENTACJE) for plik in PDF_FILES
+    plik: random.choice(MOZLIWE_IMPLEMENTACJE) for plik in PDF_FILES + DOCX_FILES
 }
 
 # --- PODGLĄD (Możesz usunąć, służy do weryfikacji w konsoli) ---
@@ -39,39 +47,28 @@ def zapisz_i_weryfikuj_docx(path, status, impl_status):
         print(f"❌ Plik nie istnieje: {path}")
         return
 
-    print(f"\n📝 Przetwarzanie DOCX: {path}")
+    print(f"\n¼ Przyjazne przetwarzanie DOCX via Core Properties: {path}")
     
     # 1. ZAPIS
     doc = Document(path)
-    custom_props = doc.custom_properties
+    props = doc.core_properties
     
-    # Dodawanie lub aktualizacja tagu Status
-    try:
-        custom_props['status'] = status
-    except KeyError:
-        custom_props.add_property('status', status)
-        
-    # Dodawanie lub aktualizacja tagu ImplementationStatus
-    try:
-        custom_props['implementation_status'] = impl_status
-    except KeyError:
-        custom_props.add_property('implementation_status', impl_status)
+    # Mapowanie do wbudowanych pól
+    props.content_status = status     # Odpowiednik Twojego 'status'
+    props.category = impl_status      # Odpowiednik Twojego 'implementation_status'
+    props.modified = datetime.datetime.now()
     
-    # Wymuszenie aktualizacji wbudowanej daty modyfikacji na "teraz"
-    doc.core_properties.modified = datetime.datetime.now()
     doc.save(path)
     print("  [OK] Metadane zostały zapisane.")
 
     # 2. ODCZYT (WERYFIKACJA)
     doc_check = Document(path)
-    odczytany_status = doc_check.custom_properties.get('status', 'BRAK')
-    odczytany_impl = doc_check.custom_properties.get('implementation_status', 'BRAK')
-    odczytana_data = doc_check.core_properties.modified
+    props_check = doc_check.core_properties
     
     print("  🔍 Weryfikacja odczytu:")
-    print(f"    ▪️ status:                 {odczytany_status}")
-    print(f"    ▪️ implementation_status:   {odczytany_impl}")
-    print(f"    ▪️ Last Modified (Word):   {odczytana_data}")
+    print(f"    ▪️ content_status (status):    {props_check.content_status}")
+    print(f"    ▪️ category (impl_status):     {props_check.category}")
+    print(f"    ▪️ Last Modified (Word):       {props_check.modified}")
 
 
 # --- FUNKCJE DLA PDF ---
@@ -128,5 +125,9 @@ if __name__ == "__main__":
         status = DOCUMENT_STATUS.get(file, "draft")
         impl_status = IMPLEMENTATION_STATUS.get(file, "n/a")
         zapisz_i_weryfikuj_pdf(file, status, impl_status)
+    for file in DOCX_FILES:
+        status = DOCUMENT_STATUS.get(file, "draft")
+        impl_status = IMPLEMENTATION_STATUS.get(file, "n/a")
+        zapisz_i_weryfikuj_docx(file, status, impl_status)
         
     print("\n=== PROCES ZAKOŃCZONY ===")

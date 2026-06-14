@@ -20,7 +20,7 @@ API_KEY = os.getenv("HF_API_KEY")
 API_URL = "https://router.huggingface.co/v1/chat/completions"
 MODEL_ID = "meta-llama/Llama-3.1-8B-Instruct"
 
-INPUT_FILE = "../../data/processed/prepared_data_faiss.pkl"
+INPUT_FILE = "data/processed/prepared_data_faiss.pkl"
 
 # Loading data and model
 try:
