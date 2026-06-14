@@ -103,16 +103,17 @@ export default function ChatPage() {
   return (
     <div className="flex h-screen w-full bg-slate-50 overflow-hidden text-slate-800">
       
-      {/* Poszerzono lekko pasek boczny (w-[340px]), aby zrobić miejsce na ogromne marginesy */}
+      {/* PASEK BOCZNY */}
       <aside 
-        className={`${isSidebarOpen ? 'w-[340px] border-r border-slate-200' : 'w-0 border-r-0'} bg-white flex flex-col flex-shrink-0 transition-all duration-300 ease-in-out z-20 overflow-hidden relative shadow-sm`}
+        className={`${isSidebarOpen ? 'border-r border-slate-200' : 'w-0 border-r-0'} bg-white flex flex-col flex-shrink-0 transition-all duration-300 ease-in-out z-20 overflow-hidden relative shadow-sm`}
+        style={{ width: isSidebarOpen ? '340px' : '0px' }}
       >
-        <div className="w-[340px] h-full flex flex-col flex-shrink-0">
+        <div className="h-full flex flex-col flex-shrink-0" style={{ width: '340px' }}>
           
-          {/* POTĘŻNE ODSUNIĘCIE LOGO OD LEWEJ KRAWĘDZI (px-8) */}
-          <div className="px-8 py-6 border-b border-slate-200 flex items-center justify-between bg-white">
+          {/* Odsunięcie logo na sztywne 20px */}
+          <div className="border-b border-slate-200 flex items-center justify-between bg-white" style={{ padding: '24px 20px' }}>
             <div className="flex items-center gap-4">
-              <div className="w-11 h-11 rounded-full border-[3px] border-blue-900 flex items-center justify-center text-[15px] font-bold text-blue-900 shadow-sm">
+              <div className="rounded-full border-[3px] border-blue-900 flex items-center justify-center text-[15px] font-bold text-blue-900 shadow-sm" style={{ width: '44px', height: '44px' }}>
                 V
               </div>
               <div>
@@ -120,35 +121,36 @@ export default function ChatPage() {
                 <div className="text-[12px] font-medium text-slate-400">Knowledge Assistant</div>
               </div>
             </div>
-            <button onClick={() => setIsSidebarOpen(false)} className="text-slate-400 hover:text-slate-700 p-2 bg-slate-50 rounded-full hover:bg-slate-100 transition-colors">
+            <button onClick={() => setIsSidebarOpen(false)} className="text-slate-400 hover:text-slate-700 bg-slate-50 rounded-full hover:bg-slate-100 transition-colors" style={{ padding: '8px' }}>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path></svg>
             </button>
           </div>
 
-          {/* ODSUNIĘCIE WYBORU PERSONY OD LEWEJ KRAWĘDZI (px-8) */}
-          <div className="px-8 pt-6 pb-2">
+          <div style={{ padding: '20px 20px 8px 20px' }}>
             <PersonaSelector current={persona} onChange={setPersona} />
           </div>
 
-          {/* ODSUNIĘCIE ANALIZY KONTEKSTU OD LEWEJ KRAWĘDZI (px-8) */}
-          <div className="px-8 py-6 overflow-y-auto flex-1 custom-scrollbar bg-white">
-            <p className="text-[12px] font-extrabold uppercase tracking-widest text-slate-400 mb-6">Analiza Kontekstu</p>
+          <div className="overflow-y-auto flex-1 custom-scrollbar bg-white" style={{ padding: '20px 20px' }}>
+            <p className="text-[12px] font-extrabold uppercase tracking-widest text-slate-400" style={{ marginBottom: '24px' }}>Analiza Kontekstu</p>
             
             {currentSources.length === 0 && currentRejected.length === 0 && (
               <p className="text-[13px] text-slate-400 italic">Brak dokumentów. Zadaj pytanie.</p>
             )}
 
             {currentSources.length > 0 && (
-              <div className="mb-10">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-green-600 mb-4 flex items-center gap-2">
+              <div style={{ marginBottom: '40px' }}>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-green-600 flex items-center gap-2" style={{ marginBottom: '16px' }}>
                   <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"/> Użyte jako źródło
                 </span>
-                <div className="flex flex-col gap-3">
+                
+                {/* Zwiększony odstęp między plikami na 16px sztywno */}
+                <div className="flex flex-col" style={{ gap: '16px' }}>
                   {currentSources.map((s, idx) => (
                     <div key={`src-${idx}`} className="border border-slate-200 bg-white rounded-xl shadow-sm overflow-hidden flex flex-col">
                       <button 
                         onClick={() => setExpandedDoc(expandedDoc === `src-${idx}` ? null : `src-${idx}`)}
-                        className="w-full text-left px-4 py-3.5 flex items-center justify-between hover:bg-slate-50 transition-colors min-w-0"
+                        className="w-full text-left flex items-center justify-between hover:bg-slate-50 transition-colors min-w-0"
+                        style={{ padding: '14px 16px' }}
                       >
                         <span className="text-[13px] font-semibold text-slate-700 truncate pr-3 flex-1 min-w-0">
                           {formatFilename(s.title)}
@@ -157,12 +159,12 @@ export default function ChatPage() {
                       </button>
                       
                       {expandedDoc === `src-${idx}` && (
-                        <div className="px-4 pb-4 pt-2 bg-slate-50/50 border-t border-slate-100 flex flex-col gap-3">
-                          <div className="flex flex-wrap gap-2 mt-1">
-                            <span className="px-2 py-1 bg-green-100 text-green-700 rounded-md text-[10px] font-bold uppercase tracking-wider border border-green-200">✔ Zaakceptowano</span>
+                        <div className="bg-slate-50/50 border-t border-slate-100 flex flex-col" style={{ padding: '8px 16px 16px 16px', gap: '12px' }}>
+                          <div className="flex flex-wrap gap-2" style={{ marginTop: '4px' }}>
+                            <span className="bg-green-100 text-green-700 rounded-md text-[10px] font-bold uppercase tracking-wider border border-green-200" style={{ padding: '4px 8px' }}>✔ Zaakceptowano</span>
                           </div>
-                          <div className="bg-white p-3 rounded-md border border-slate-200 text-slate-500 text-[11px] break-all font-mono shadow-inner">
-                            <span className="font-bold text-slate-400 uppercase text-[9px] block mb-1.5 tracking-wider">Pełna ścieżka pliku:</span>
+                          <div className="bg-white rounded-md border border-slate-200 text-slate-500 text-[12px] leading-relaxed break-all font-mono shadow-inner" style={{ padding: '14px' }}>
+                            <span className="font-bold text-slate-400 uppercase text-[9px] block tracking-wider" style={{ marginBottom: '8px' }}>Pełna ścieżka pliku:</span>
                             {s.title}
                           </div>
                         </div>
@@ -175,15 +177,16 @@ export default function ChatPage() {
 
             {currentRejected.length > 0 && (
               <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-red-500 mb-4 flex items-center gap-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-red-500 flex items-center gap-2" style={{ marginBottom: '16px' }}>
                   <div className="w-2.5 h-2.5 rounded-full bg-red-400"/> Odrzucone przez RAG
                 </span>
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col" style={{ gap: '16px' }}>
                   {currentRejected.map((r, idx) => (
                     <div key={`rej-${idx}`} className="border border-red-100 bg-white rounded-xl shadow-sm overflow-hidden flex flex-col">
                       <button 
                         onClick={() => setExpandedDoc(expandedDoc === `rej-${idx}` ? null : `rej-${idx}`)}
-                        className="w-full text-left px-4 py-3.5 flex items-center justify-between hover:bg-red-50/30 transition-colors min-w-0"
+                        className="w-full text-left flex items-center justify-between hover:bg-red-50/30 transition-colors min-w-0"
+                        style={{ padding: '14px 16px' }}
                       >
                         <span className="text-[13px] font-semibold text-slate-600 truncate pr-3 flex-1 min-w-0">
                           {formatFilename(r.rejected_doc)}
@@ -192,15 +195,15 @@ export default function ChatPage() {
                       </button>
                       
                       {expandedDoc === `rej-${idx}` && (
-                        <div className="px-4 pb-4 pt-2 bg-red-50/30 border-t border-red-100 flex flex-col gap-3">
-                          <div className="flex flex-wrap gap-2 mt-1">
-                            <span className="px-2 py-1 bg-red-100 text-red-700 rounded-md text-[10px] font-bold uppercase tracking-wider border border-red-200">✖ Odrzucono</span>
-                            <span className="px-2 py-1 bg-white text-slate-600 rounded-md text-[10px] font-bold tracking-wider border border-slate-200 shadow-sm">
+                        <div className="bg-red-50/30 border-t border-red-100 flex flex-col" style={{ padding: '8px 16px 16px 16px', gap: '12px' }}>
+                          <div className="flex flex-wrap gap-2" style={{ marginTop: '4px' }}>
+                            <span className="bg-red-100 text-red-700 rounded-md text-[10px] font-bold uppercase tracking-wider border border-red-200" style={{ padding: '4px 8px' }}>✖ Odrzucono</span>
+                            <span className="bg-white text-slate-600 rounded-md text-[10px] font-bold tracking-wider border border-slate-200 shadow-sm" style={{ padding: '4px 8px' }}>
                               Wynik: {r.rejected_score.toFixed(3)}
                             </span>
                           </div>
-                          <div className="bg-white p-3 rounded-md border border-red-100 text-slate-500 text-[11px] break-all font-mono shadow-inner">
-                            <span className="font-bold text-slate-400 uppercase text-[9px] block mb-1.5 tracking-wider">Pełna ścieżka pliku:</span>
+                          <div className="bg-white rounded-md border border-red-100 text-slate-500 text-[12px] leading-relaxed break-all font-mono shadow-inner" style={{ padding: '14px' }}>
+                            <span className="font-bold text-slate-400 uppercase text-[9px] block tracking-wider" style={{ marginBottom: '8px' }}>Pełna ścieżka pliku:</span>
                             {r.rejected_doc}
                           </div>
                         </div>
@@ -215,25 +218,28 @@ export default function ChatPage() {
         </div>
       </aside>
 
+      {/* --- GŁÓWNA SEKCJA CZATU --- */}
       <main className="flex-1 flex flex-col min-w-0 bg-white relative">
         
         {!isSidebarOpen && (
           <button 
             onClick={() => setIsSidebarOpen(true)}
-            className="absolute top-6 left-6 z-10 p-3 bg-white rounded-xl shadow-md border border-slate-200 text-slate-500 hover:text-blue-600 transition-colors"
+            className="absolute z-10 bg-white rounded-xl shadow-md border border-slate-200 text-slate-500 hover:text-blue-600 transition-colors"
+            style={{ top: '24px', left: '24px', padding: '12px' }}
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
           </button>
         )}
 
-        <div className="flex-1 overflow-y-auto p-6 md:p-8 flex flex-col items-center messages-container">
-          <div className="w-full max-w-3xl flex flex-col gap-6 pb-6 min-w-0">
+        {/* Dodany sztywny padding góra-dół dla kontenera czatu */}
+        <div className="flex-1 overflow-y-auto flex flex-col items-center messages-container" style={{ padding: '40px 32px' }}>
+          <div className="w-full max-w-3xl flex flex-col min-w-0" style={{ gap: '24px', paddingBottom: '24px' }}>
             
             {messages.length === 0 && (
-              <div className="flex flex-col items-center justify-center h-[65vh] text-center gap-6">
-                <div className="w-24 h-24 bg-blue-900 rounded-[2rem] flex items-center justify-center text-5xl shadow-xl ring-8 ring-blue-900/5">🤖</div>
+              <div className="flex flex-col items-center justify-center text-center" style={{ height: '65vh', gap: '24px' }}>
+                <div className="bg-blue-900 flex items-center justify-center text-5xl shadow-xl ring-8 ring-blue-900/5" style={{ width: '96px', height: '96px', borderRadius: '32px' }}>🤖</div>
                 <div>
-                  <h2 className="text-3xl font-extrabold text-slate-800 mb-4 tracking-tight">Volvo Knowledge Assistant</h2>
+                  <h2 className="text-3xl font-extrabold text-slate-800 tracking-tight" style={{ marginBottom: '16px' }}>Volvo Knowledge Assistant</h2>
                   <p className="text-[16px] text-slate-500 max-w-lg mx-auto leading-relaxed">
                     Zadaj pytanie, a przeanalizuję dostępną dokumentację, aby dostarczyć Ci precyzyjną odpowiedź.
                   </p>
@@ -246,39 +252,43 @@ export default function ChatPage() {
             ))}
 
             {isLoading && <TypingIndicator />}
-            <div ref={bottomRef} className="h-6" />
+            <div ref={bottomRef} style={{ height: '24px' }} />
           </div>
         </div>
 
-        <div className="px-6 py-6 bg-gradient-to-t from-white via-white to-white/0 flex justify-center pb-8">
+        {/* --- POLE WPISYWANIA ZE SZTYWNYMI MARGINESAMI --- */}
+        <div className="bg-gradient-to-t from-white via-white to-white/0 flex justify-center" style={{ padding: '24px 24px 32px 24px' }}>
           <div className="w-full max-w-3xl flex flex-col">
             
-            <div className="flex gap-4 items-end bg-slate-50 border border-slate-300 shadow-sm rounded-3xl pl-6 pr-2.5 py-2 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/10 transition-all">
+            <div className="flex items-end bg-slate-50 border border-slate-300 shadow-sm rounded-3xl focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/10 transition-all" 
+                 style={{ padding: '10px 10px 10px 20px', gap: '16px' }}>
               
               <textarea
                 ref={textareaRef}
                 value={input}
                 onChange={handleInput}
                 onKeyDown={handleKeyDown}
-                placeholder="Zadaj pytanie dotyczące dokumentacji Volvo..."
+                placeholder="Zadaj pytanie..."
                 rows={1}
-                className="flex-1 bg-transparent resize-none outline-none text-[15px] text-slate-800 placeholder-slate-400 max-h-[180px] overflow-y-auto py-2.5 custom-scrollbar"
-                style={{ wordBreak: 'break-word' }}
+                // Sztywny margines z lewej (paddingLeft: 4px) na samym polu + paddingLeft 20px w kontenerze = brak szans na dotknięcie ramki!
+                className="flex-1 bg-transparent resize-none outline-none text-[15px] text-slate-800 placeholder-slate-400 custom-scrollbar"
+                style={{ wordBreak: 'break-word', padding: '10px 0px 10px 4px', maxHeight: '180px' }}
               />
               
               <button
                 onClick={sendMessage}
                 disabled={!input.trim() || isLoading}
-                className="w-10 h-10 mb-1 bg-blue-900 hover:bg-blue-800 disabled:bg-slate-300 rounded-full flex items-center justify-center transition-transform hover:scale-105 active:scale-95 disabled:scale-100 flex-shrink-0 shadow-sm"
+                className="bg-blue-900 hover:bg-blue-800 disabled:bg-slate-300 rounded-full flex items-center justify-center transition-transform hover:scale-105 active:scale-95 disabled:scale-100 flex-shrink-0 shadow-sm"
+                style={{ width: '40px', height: '40px', marginBottom: '4px' }}
               >
-                <svg className="w-4 h-4 fill-white translate-x-[1px]" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 fill-white" style={{ transform: 'translateX(1px)' }} viewBox="0 0 24 24">
                   <path d="M2 21L23 12L2 3V10L17 12L2 14V21Z"/>
                 </svg>
               </button>
 
             </div>
 
-            <p className="text-[13px] font-medium text-slate-400 mt-4 text-center">
+            <p className="text-[13px] font-medium text-slate-400 text-center" style={{ marginTop: '16px' }}>
               Wybrana rola: <span className="font-bold text-slate-600">{persona === 'business' ? 'Business User' : persona === 'engineer' ? 'Data Engineer' : 'Architect'}</span> · Enter aby wysłać · Shift+Enter nowa linia
             </p>
           </div>
